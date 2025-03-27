@@ -67,9 +67,9 @@ func check_valid_move(card):
 	# Don't move in same pile or back to Stock
 	if card.pile_id == null or card.pile_id == pile_id:
 		return false
-	
+
 	var pile = GameManager.piles[card.pile_id]
-	
+
 	# Empty pile - it's hard to detect an empty pile when we don't have marker. 
 	# so we will use a hack to detect a card as empty pile
 	if len(pile) == 1 and card.suit == -1 and card.value == -1:
