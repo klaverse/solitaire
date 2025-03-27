@@ -1,7 +1,15 @@
 extends Area2D
 
+enum Suit {
+	hides = 0,
+	spades = 1,
+	clubs = 2,
+	diamonds = 3,
+	hearts = 4
+}
+
 var value = 0
-var suit = 0
+var suit: Suit = Suit.hides
 var flipped: bool = false
 var is_dragging: bool = false # Whether card is being dragged
 
@@ -21,7 +29,7 @@ func _input(event):
 	
 	# don't move card if mouse is not on the card
 	# don't move empty card
-	if not is_mouse_entered or (suit == -1 and value == -1):
+	if not is_mouse_entered or (suit == Suit.hides and value == 0):
 		return
 		
 	# When user presses on stock then we need to shuffle top cards
@@ -44,16 +52,31 @@ func _input(event):
 func update_sprite():
 	if sprite:
 		sprite.texture = get_texture()
-		if suit == -1 and value == -1:
+		if suit == Suit.hides and value == 0:
 			sprite.hide()
-		
-func get_texture():
-	if not flipped or (suit == -1 and value == -1):
-		return preload("res://assets/Playing Cards/card-back1.png")
 
-	var res_path = "res://assets/{value}.{suit}.png".format({
-		"value": str(value + 1),
-		"suit": str(suit + 1)
+func get_value_string() -> String:
+	return str(value)
+
+func get_suit_string() -> String:
+	match suit:
+		Suit.spades:
+			return "spades"
+		Suit.clubs:
+			return "clubs"
+		Suit.diamonds:
+			return "diamonds"
+		Suit.hearts:
+			return "hearts"
+	return "spades"
+
+func get_texture():
+	if not flipped or (suit == Suit.hides and value == 0):
+		return preload("res://assets/Playing Cards/card-back1.png")
+	
+	var res_path = "res://assets/Playing Cards/card-{suit}-{value}.png".format({
+		"suit": get_suit_string(),
+		"value": str(value)
 	})
 	return load(res_path)
 	
@@ -72,7 +95,7 @@ func check_valid_move(card):
 
 	# Empty pile - it's hard to detect an empty pile when we don't have marker. 
 	# so we will use a hack to detect a card as empty pile
-	if len(pile) == 1 and card.suit == -1 and card.value == -1:
+	if len(pile) == 1 and card.suit == Suit.hides and card.value == 0:
 		return true # we can move cards to an empty pile
 	
 	# don't place card on top of unflipped card
@@ -81,7 +104,7 @@ func check_valid_move(card):
 		
 	# the card where we are going to place should be one more in value and has opposite colored suit
 	# select top card in the pile where we are going place the current set, hence pile[-1]
-	if value == pile[-1].value - 1 and suit % 2 != pile[-1].suit % 2:
+	if value == pile[-1].value and suit % 2 != pile[-1].suit % 2:
 		return true
 	
 	return false
