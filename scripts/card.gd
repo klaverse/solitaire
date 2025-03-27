@@ -2,12 +2,12 @@ extends Area2D
 
 var value = 0
 var suit = 0
-var flipped:bool = false
-var is_dragging:bool = false # Whether card is being dragged
+var flipped: bool = false
+var is_dragging: bool = false # Whether card is being dragged
 
 var pile_id = null # Keep track of on what pile is the card placed in.
-var stock:bool = false # Keep track whether the card is in stock set
-var is_mouse_entered:bool = false
+var stock: bool = false # Keep track whether the card is in stock set
+var is_mouse_entered: bool = false
 var previous_positions = [] # Old Positions of cards being moved
 
 @onready var sprite:Sprite2D = $Sprite2D
