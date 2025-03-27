@@ -1,7 +1,5 @@
 extends Node
 
-class_name GameManager
-
 const NO_OF_PILES = 6
 
 var deck = []
