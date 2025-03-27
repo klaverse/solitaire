@@ -11,8 +11,13 @@ config_version=5
 [application]
 
 config/name="Solitaire"
+run/main_scene="res://scenes/Board.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.svg"
+
+[autoload]
+
+GameManager="*res://scripts/game_manager.gd"
 
 [rendering]
 
