@@ -1,15 +1,16 @@
 extends Area2D
+class_name Card
 
 enum Suit {
-	hides = 0,
-	spades = 1,
-	clubs = 2,
-	diamonds = 3,
-	hearts = 4
+	NONE = 0,
+	SPADES = 1,
+	CLUBS = 2,
+	DIAMONDS = 3,
+	HEARTS = 4
 }
 
 var value = 0
-var suit: Suit = Suit.hides
+var suit: Suit = Suit.NONE
 var flipped: bool = false
 var is_dragging: bool = false # Whether card is being dragged
 
@@ -24,27 +25,29 @@ var previous_positions = [] # Old Positions of cards being moved
 func _ready():
 	update_sprite()
 
-func _input(event):
+func _input(event: InputEvent):
 	# Handle all card drag events
 	
 	# don't move card if mouse is not on the card
 	# don't move empty card
-	if not is_mouse_entered or (suit == Suit.hides and value == 0):
+	if not is_mouse_entered or (suit == Suit.NONE and value == 0):
 		return
 		
 	# When user presses on stock then we need to shuffle top cards
-	if Input.is_action_just_pressed("left_click") and stock:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and stock:
+		print("stock")
 		update_stock_top()
 		return
 	
 	# Can move only the top card
-	if Input.is_action_just_pressed("left_click") and flipped:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and flipped:
+		print("hold")
 		is_dragging = true
 		# If user doesn't want to move card or is doing invalid move, then we need to reset positions of selected cards
 		remember_card_positions()
 	elif event is InputEventMouseMotion and is_dragging:
 		move_cards()
-	elif Input.is_action_just_released("left_click") and is_dragging:
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.is_pressed() and is_dragging:
 		is_dragging = false
 		if !drop_card():
 			reset_cards()
@@ -52,7 +55,7 @@ func _input(event):
 func update_sprite():
 	if sprite:
 		sprite.texture = get_texture()
-		if suit == Suit.hides and value == 0:
+		if suit == Suit.NONE and value == 0:
 			sprite.hide()
 
 func get_value_string() -> String:
@@ -60,42 +63,40 @@ func get_value_string() -> String:
 
 func get_suit_string() -> String:
 	match suit:
-		Suit.spades:
+		Suit.SPADES:
 			return "spades"
-		Suit.clubs:
+		Suit.CLUBS:
 			return "clubs"
-		Suit.diamonds:
+		Suit.DIAMONDS:
 			return "diamonds"
-		Suit.hearts:
+		Suit.HEARTS:
 			return "hearts"
 	return "spades"
 
 func get_texture():
-	if not flipped or (suit == Suit.hides and value == 0):
+	if not flipped or (suit == Suit.NONE and value == 0):
 		return preload("res://assets/Playing Cards/card-back1.png")
-	
+
 	var res_path = "res://assets/Playing Cards/card-{suit}-{value}.png".format({
 		"suit": get_suit_string(),
 		"value": str(value)
 	})
 	return load(res_path)
-	
+
 func flip():
 	flipped = !flipped
 	update_sprite()
 
-# Game Logic
-
-func check_valid_move(card):
+func check_valid_move(card: Card):
 	# Don't move in same pile or back to Stock
 	if card.pile_id == null or card.pile_id == pile_id:
 		return false
 
-	var pile = GameManager.piles[card.pile_id]
+	var pile: Array[Card] = GameManager.piles[card.pile_id]
 
 	# Empty pile - it's hard to detect an empty pile when we don't have marker. 
 	# so we will use a hack to detect a card as empty pile
-	if len(pile) == 1 and card.suit == Suit.hides and card.value == 0:
+	if len(pile) == 1 and card.suit == Suit.NONE and card.value == 0:
 		return true # we can move cards to an empty pile
 	
 	# don't place card on top of unflipped card
@@ -109,18 +110,18 @@ func check_valid_move(card):
 	
 	return false
 
-func move_to_new_pile(new_card):
+func move_to_new_pile(new_card: Card):
 	# Move pile card
 	if pile_id != null:
-		var current_pile = GameManager.piles[pile_id]
+		var current_pile: Array[Card] = GameManager.piles[pile_id]
 		var current_card_index = current_pile.find(self)
 		
-		var new_pile = GameManager.piles[new_card.pile_id]
+		var new_pile: Array[Card] = GameManager.piles[new_card.pile_id]
 		
 		# Move cards from current_pile to new_pile
 		var cards_to_move = current_pile.slice(current_card_index, len(current_pile))
 		for i in range(len(cards_to_move)):
-			var card = cards_to_move[i]
+			var card: Card = cards_to_move[i]
 			card.position = GameManager.get_pile_position(
 				new_card.pile_id, len(new_pile) - 1,
 				GameManager.PILE_X_OFFSET, GameManager.PILE_Y_OFFSET
@@ -140,7 +141,7 @@ func move_to_new_pile(new_card):
 	# move from stock
 	elif pile_id == null:
 		var new_pile = GameManager.piles[new_card.pile_id]
-		var card = GameManager.deck.pop_back()
+		var card: Card = GameManager.deck.pop_back()
 		card.stock = false
 		card.position = GameManager.get_pile_position(
 			new_card.pile_id, len(new_pile) - 1,
@@ -154,7 +155,7 @@ func move_to_new_pile(new_card):
 		# Only if there are 2 cards or more.
 		# 1 card wouldb e the stock itself
 		if len(GameManager.deck) > 1:
-			var card_on_stock = GameManager.deck[-1]
+			var card_on_stock: Card = GameManager.deck[-1]
 			card_on_stock.stock = false
 			card_on_stock.flip()
 			card_on_stock.position = GameManager.get_pile_position(
@@ -167,7 +168,7 @@ func move_to_new_pile(new_card):
 
 func update_stock_top():
 	# Remove current stock top and place it at the beginning of the stock
-	var cur_stock_top = GameManager.deck.pop_back()
+	var cur_stock_top: Card = GameManager.deck.pop_back()
 	cur_stock_top.flip()
 	cur_stock_top.stock = true
 	var pos = cur_stock_top.position
@@ -181,8 +182,6 @@ func update_stock_top():
 		new_card.stock = false
 		new_card.flip()
 		new_card.position = pos
-
-	
 
 func check_win():
 	if len(GameManager.deck) > 0:
@@ -221,7 +220,7 @@ func move_cards():
 func drop_card():
 	# If card is moved to a valid set, then we need to move it.
 	var overlapping_areas = get_overlapping_areas()
-	for area in overlapping_areas:
+	for area: Card in overlapping_areas:
 		# Need to detect other card
 		if area.is_in_group("card"):
 			if check_valid_move(area):
