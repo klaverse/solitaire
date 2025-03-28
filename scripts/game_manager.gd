@@ -2,11 +2,11 @@ extends Node
 
 const NO_OF_PILES = 6
 
-var deck = []
-var piles = []
+var deck: Array = []
+var piles: Array[Array] = []
 
-const PILE_X_OFFSET = 350
-const PILE_Y_OFFSET = 200
+const PILE_X_OFFSET: int = 350
+const PILE_Y_OFFSET: int = 200
 
 func _init():
 	for i in range(NO_OF_PILES):
