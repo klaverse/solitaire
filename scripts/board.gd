@@ -10,27 +10,27 @@ func init_deck():
 	for suit in range(0, 4):
 		for value in range(0, 13):
 			var card = preload("res://scenes/Card.tscn").instantiate()
-			card.value = value
+			card.value = value + 1
 			card.suit = suit
 			GameManager.deck.append(card)
 	seed(1)
 	GameManager.deck.shuffle()
 
-func get_empty_card():
+func get_empty_card() -> Card:
 	var card = preload("res://scenes/Card.tscn").instantiate()
 	# Empty card does not have value
-	card.value = -1
-	card.suit = -1
+	card.value = 0
+	card.suit = card.Suit.NONE
 	card.flip()
 	return card
 
 func deal_cards():
 	for i in range(GameManager.NO_OF_PILES):
-		var pile = GameManager.piles[i]
+		var pile: Array = GameManager.piles[i]
 
 		# Place empty card at the begining of the pile.
 		# This card cannot be moved, nor used in movement
-		var empty_card = get_empty_card()
+		var empty_card: Card = get_empty_card()
 		empty_card.pile_id = i
 		empty_card.position = GameManager.get_pile_position(i, 0, GameManager.PILE_X_OFFSET, GameManager.PILE_Y_OFFSET)
 		pile.append(empty_card)
