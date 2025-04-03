@@ -32,16 +32,14 @@ func _input(event: InputEvent):
 	# don't move empty card
 	if not is_mouse_entered or (suit == Suit.NONE and value == 0):
 		return
-		
+
 	# When user presses on stock then we need to shuffle top cards
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and stock:
-		print("stock")
+	if event is InputEventMouseButton and event.is_pressed() and event.button_index == MOUSE_BUTTON_LEFT and stock:
 		update_stock_top()
 		return
 	
 	# Can move only the top card
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and flipped:
-		print("hold")
+	if event is InputEventMouseButton and event.is_pressed() and event.button_index == MOUSE_BUTTON_LEFT and flipped:
 		is_dragging = true
 		# If user doesn't want to move card or is doing invalid move, then we need to reset positions of selected cards
 		remember_card_positions()
@@ -51,7 +49,7 @@ func _input(event: InputEvent):
 		is_dragging = false
 		if !drop_card():
 			reset_cards()
-		
+
 func update_sprite():
 	if sprite:
 		sprite.texture = get_texture()
@@ -92,11 +90,11 @@ func check_valid_move(card: Card):
 	if card.pile_id == null or card.pile_id == pile_id:
 		return false
 
-	var pile: Array[Card] = GameManager.piles[card.pile_id]
+	var pile: Pile = GameManager.piles[card.pile_id]
 
 	# Empty pile - it's hard to detect an empty pile when we don't have marker. 
 	# so we will use a hack to detect a card as empty pile
-	if len(pile) == 1 and card.suit == Suit.NONE and card.value == 0:
+	if len(pile.cards) == 1 and card.suit == Suit.NONE and card.value == 0:
 		return true # we can move cards to an empty pile
 	
 	# don't place card on top of unflipped card
@@ -105,7 +103,10 @@ func check_valid_move(card: Card):
 		
 	# the card where we are going to place should be one more in value and has opposite colored suit
 	# select top card in the pile where we are going place the current set, hence pile[-1]
-	if value == pile[-1].value and suit % 2 != pile[-1].suit % 2:
+	print(value)
+	print(pile.cards[-1].value)
+	print()
+	if value == pile.cards[-1].value - 1 and suit % 2 != pile.cards[-1].suit % 2:
 		return true
 	
 	return false
@@ -113,43 +114,43 @@ func check_valid_move(card: Card):
 func move_to_new_pile(new_card: Card):
 	# Move pile card
 	if pile_id != null:
-		var current_pile: Array[Card] = GameManager.piles[pile_id]
-		var current_card_index = current_pile.find(self)
+		var current_pile: Pile = GameManager.piles[pile_id]
+		var current_card_index = current_pile.cards.find(self)
 		
-		var new_pile: Array[Card] = GameManager.piles[new_card.pile_id]
+		var new_pile: Pile = GameManager.piles[new_card.pile_id]
 		
 		# Move cards from current_pile to new_pile
-		var cards_to_move = current_pile.slice(current_card_index, len(current_pile))
+		var cards_to_move = current_pile.cards.slice(current_card_index, len(current_pile.cards))
 		for i in range(len(cards_to_move)):
 			var card: Card = cards_to_move[i]
 			card.position = GameManager.get_pile_position(
-				new_card.pile_id, len(new_pile) - 1,
+				new_card.pile_id, len(new_pile.cards) - 1,
 				GameManager.PILE_X_OFFSET, GameManager.PILE_Y_OFFSET
 			)
-			card.z_index = new_pile[-1].z_index + 1
+			card.z_index = new_pile.cards[-1].z_index + 1
 			card.pile_id = new_card.pile_id
-			new_pile.append(card)
+			new_pile.cards.append(card)
 		
 		# Remove the top cards from old pile
 		for i in range(len(cards_to_move)):
-			current_pile.pop_back()
+			current_pile.cards.pop_back()
 		
 		# Flip the top-most card of previous pile after moving
-		if len(current_pile) > 1:
-			current_pile.back().flip()
+		if len(current_pile.cards) > 1:
+			current_pile.cards.back().flip()
 	
 	# move from stock
 	elif pile_id == null:
-		var new_pile = GameManager.piles[new_card.pile_id]
+		var new_pile: Pile = GameManager.piles[new_card.pile_id]
 		var card: Card = GameManager.deck.pop_back()
 		card.stock = false
 		card.position = GameManager.get_pile_position(
-			new_card.pile_id, len(new_pile) - 1,
+			new_card.pile_id, len(new_pile.cards) - 1,
 			GameManager.PILE_X_OFFSET, GameManager.PILE_Y_OFFSET
 		)
-		card.z_index = new_pile[-1].z_index + 1
+		card.z_index = new_pile.cards[-1].z_index + 1
 		card.pile_id = new_card.pile_id
-		new_pile.append(card)
+		new_pile.cards.append(card)
 		
 		# Flip card in the stock
 		# Only if there are 2 cards or more.
@@ -186,8 +187,8 @@ func update_stock_top():
 func check_win():
 	if len(GameManager.deck) > 0:
 		return false
-	for pile in GameManager.piles:
-		for card in pile:
+	for pile: Pile in GameManager.piles:
+		for card: Card in pile.cards:
 			if not card.flipped:
 				return false
 	return true
@@ -203,10 +204,10 @@ func move_cards():
 	
 	# First find the selected card
 	var pile = GameManager.piles[pile_id]
-	var current_card_index = pile.find(self)
-	if len(pile) > current_card_index:
+	var current_card_index = pile.cards.find(self)
+	if len(pile.cards) > current_card_index:
 		# We need to move selected set of cards
-		var cards_to_move = pile.slice(current_card_index, len(pile))
+		var cards_to_move = pile.cards.slice(current_card_index, len(pile.cards))
 		for i in range(len(cards_to_move)):
 			var card = cards_to_move[i]
 			card.position = get_global_mouse_position()
@@ -241,10 +242,10 @@ func remember_card_positions():
 		return
 		
 	var pile = GameManager.piles[pile_id]
-	var current_card_index = pile.find(self)
-	if len(pile) > current_card_index:
+	var current_card_index = pile.cards.find(self)
+	if len(pile.cards) > current_card_index:
 		# We need to move selected set of cards
-		var cards_to_move = pile.slice(current_card_index, len(pile))
+		var cards_to_move = pile.cards.slice(current_card_index, len(pile.cards))
 		for card in cards_to_move:
 			previous_positions.append({
 				"position": card.position
@@ -256,14 +257,14 @@ func reset_cards():
 		z_index = 1
 	else:
 		var pile = GameManager.piles[pile_id]
-		var current_card_index = pile.find(self)
-		if len(pile) > current_card_index:
+		var current_card_index = pile.cards.find(self)
+		if len(pile.cards) > current_card_index:
 			# We need to reset positions of selected set of cards
-			var cards_to_move = pile.slice(current_card_index, len(pile))
+			var cards_to_move = pile.cards.slice(current_card_index, len(pile.cards))
 			for i in range(len(previous_positions)):
 				var card = cards_to_move[i]
 				card.position = previous_positions[i]['position']
-				card.z_index = pile[current_card_index - 1].z_index + i + 1
+				card.z_index = pile.cards[current_card_index - 1].z_index + i + 1
 	previous_positions = []
 
 func _on_mouse_entered():

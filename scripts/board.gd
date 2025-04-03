@@ -26,14 +26,14 @@ func get_empty_card() -> Card:
 
 func deal_cards():
 	for i in range(GameManager.NO_OF_PILES):
-		var pile: Array = GameManager.piles[i]
+		var pile: Pile = GameManager.piles[i]
 
 		# Place empty card at the begining of the pile.
 		# This card cannot be moved, nor used in movement
 		var empty_card: Card = get_empty_card()
 		empty_card.pile_id = i
 		empty_card.position = GameManager.get_pile_position(i, 0, GameManager.PILE_X_OFFSET, GameManager.PILE_Y_OFFSET)
-		pile.append(empty_card)
+		pile.cards.append(empty_card)
 		add_child(empty_card)
 
 		for j in range(0, i + 1):
@@ -44,7 +44,7 @@ func deal_cards():
 				card.flip()
 			card.position = GameManager.get_pile_position(i, j, GameManager.PILE_X_OFFSET, GameManager.PILE_Y_OFFSET)
 			card.pile_id = i
-			pile.append(card)
+			pile.cards.append(card)
 			add_child(card)
 
 func place_stock_pile():
